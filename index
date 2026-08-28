@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checklist Oficina</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="topbar">
+  <div>
+    <h1>Checklist Oficina</h1>
+    <p>Entrada e saída de equipamentos</p>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- INÍCIO -->
+  <section id="home" class="screen active">
+
+    <div class="card hero">
+
+      <div class="logo">JD</div>
+
+      <h2>Novo Checklist</h2>
+
+      <p>
+        Selecione o tipo de checklist que deseja realizar.
+      </p>
+
+      <div class="tipo-grid">
+
+        <button class="tipo-card entrada" data-tipo="ENTRADA">
+          <span class="icone">↓</span>
+          <strong>ENTRADA</strong>
+          <small>Registrar condição do equipamento ao chegar na oficina.</small>
+        </button>
+
+        <button class="tipo-card saida" data-tipo="SAÍDA">
+          <span class="icone">↑</span>
+          <strong>SAÍDA</strong>
+          <small>Registrar condição do equipamento antes da entrega.</small>
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- FORMULÁRIO -->
+  <section id="formScreen" class="screen">
+
+    <div class="card">
+
+      <div class="form-top">
+
+        <div>
+          <span id="tipoBadge" class="badge"></span>
+          <h2>Identificação do equipamento</h2>
+        </div>
+
+        <button id="btnVoltar" class="btn secondary" type="button">
+          Voltar
+        </button>
+
+      </div>
+
+
+      <form id="checklistForm">
+
+        <div class="grid">
+
+          <label>
+            Cliente *
+            <input id="cliente" required>
+          </label>
+
+          <label>
+            Equipamento *
+            <input id="equipamento" required
+                   placeholder="Ex.: Trator 6155J">
+          </label>
+
+          <label>
+            Modelo
+            <input id="modelo">
+          </label>
+
+          <label>
+            Chassi / Nº de série *
+            <input id="chassi" required>
+          </label>
+
+          <label>
+            Ordem de Serviço
+            <input id="os">
+          </label>
+
+          <label>
+            Horímetro *
+            <input id="horimetro"
+                   type="number"
+                   min="0"
+                   step="0.1"
+                   required>
+          </label>
+
+          <label>
+            Responsável *
+            <input id="responsavel" required>
+          </label>
+
+          <label>
+            Filial
+            <input id="filial">
+          </label>
+
+        </div>
+
+
+        <hr>
+
+
+        <h2>Checklist de inspeção</h2>
+
+        <p class="helper">
+          Selecione o estado de cada item. Caso marque
+          <b>AVARIA</b>, informe a observação.
+        </p>
+
+        <div id="items"></div>
+
+
+        <label class="full">
+          Observações gerais
+
+          <textarea
+            id="observacoes"
+            rows="5"
+            placeholder="Informações adicionais sobre o equipamento...">
+          </textarea>
+
+        </label>
+
+
+        <hr>
+
+
+        <h2>Registro fotográfico</h2>
+
+        <p class="helper">
+          Registre as principais áreas do equipamento e eventuais avarias.
+        </p>
+
+
+        <div class="photo-grid">
+
+          <label class="photo-card">
+            <span>📷</span>
+            Frente
+            <input type="file"
+                   accept="image/*"
+                   capture="environment"
+                   data-categoria="Frente">
+          </label>
+
+          <label class="photo-card">
+            <span>📷</span>
+            Traseira
+            <input type="file"
+                   accept="image/*"
+                   capture="environment"
+                   data-categoria="Traseira">
+          </label>
+
+          <label class="photo-card">
+            <span>📷</span>
+            Lateral esquerda
+            <input type="file"
+                   accept="image/*"
+                   capture="environment"
+                   data-categoria="Lateral esquerda">
+          </label>
+
+          <label class="photo-card">
+            <span>📷</span>
+            Lateral direita
+            <input type="file"
+                   accept="image/*"
+                   capture="environment"
+                   data-categoria="Lateral direita">
+          </label>
+
+          <label class="photo-card">
+            <span>📷</span>
+            Painel / Horímetro
+            <input type="file"
+                   accept="image/*"
+                   capture="environment"
+                   data-categoria="Painel / Horímetro">
+          </label>
+
+          <label class="photo-card">
+            <span>📷</span>
+            Avaria / detalhe
+            <input type="file"
+                   accept="image/*"
+                   capture="environment"
+                   data-categoria="Avaria / detalhe">
+          </label>
+
+        </div>
+
+
+        <div id="photoPreview" class="photo-preview"></div>
+
+
+        <div class="actions">
+
+          <button
+            class="btn primary"
+            type="submit">
+
+            Finalizar Checklist
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </section>
+
+
+  <!-- SUCESSO -->
+  <section id="success" class="screen">
+
+    <div class="card success">
+
+      <div class="success-icon">✓</div>
+
+      <h2>Checklist registrado!</h2>
+
+      <p>Protocolo gerado:</p>
+
+      <strong id="protocolo"></strong>
+
+      <div class="actions">
+
+        <button
+          id="btnNovo"
+          class="btn primary">
+
+          Novo Checklist
+
+        </button>
+
+        <button
+          id="btnInicio"
+          class="btn secondary">
+
+          Voltar ao início
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<div id="loading" class="loading hidden">
+
+  <div class="spinner"></div>
+
+  <strong>Salvando checklist...</strong>
+
+  <span>Aguarde enquanto os dados e fotos são enviados.</span>
+
+</div>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>
