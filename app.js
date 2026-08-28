@@ -1,5 +1,5 @@
 const API_URL =
-"https://script.google.com/macros/s/AKfycbz9IerVRS7Z-LWy0FfwQyhYQ563-AP42Yc7NPxQ4coR3blgSIgQO3fR9dWybBTAhet3/exec";
+  "https://script.google.com/macros/s/AKfycbz9IerVRS7Z-LWy0FfwQyhYQ563-AP42Yc7NPxQ4coR3blgSIgQO3fR9dWybBTAhet3/exec";
 
 
 const ITENS = [
@@ -31,9 +31,9 @@ const $ = id =>
   document.getElementById(id);
 
 
-/* =========================
+/* ==================================================
    NAVEGAÇÃO
-========================= */
+================================================== */
 
 function mostrarTela(id) {
 
@@ -53,9 +53,9 @@ function mostrarTela(id) {
 }
 
 
-/* =========================
+/* ==================================================
    CHECKLIST
-========================= */
+================================================== */
 
 function criarChecklist() {
 
@@ -72,31 +72,43 @@ function criarChecklist() {
         <div class="options">
 
           <label>
+
             <input
               type="radio"
               name="item_${index}"
               value="OK"
               required>
+
             OK
+
           </label>
 
+
           <label>
+
             <input
               type="radio"
               name="item_${index}"
               value="AVARIA">
+
             Avaria
+
           </label>
 
+
           <label>
+
             <input
               type="radio"
               name="item_${index}"
               value="N/A">
+
             N/A
+
           </label>
 
         </div>
+
 
         <textarea
           rows="2"
@@ -135,6 +147,10 @@ function criarChecklist() {
 
             textarea.required = false;
 
+            if (this.value !== "AVARIA") {
+              textarea.value = "";
+            }
+
           }
 
         }
@@ -145,9 +161,9 @@ function criarChecklist() {
 }
 
 
-/* =========================
+/* ==================================================
    RESET
-========================= */
+================================================== */
 
 function limparFormulario() {
 
@@ -162,37 +178,142 @@ function limparFormulario() {
 }
 
 
-/* =========================
-   FOTO → BASE64
-========================= */
+/* ==================================================
+   REDIMENSIONAR E COMPRIMIR FOTO
+================================================== */
 
-function arquivoBase64(file) {
+function prepararFoto(file) {
 
-  return new Promise(
-    (resolve, reject) => {
+  return new Promise((resolve, reject) => {
 
-      const reader =
-        new FileReader();
+    const reader =
+      new FileReader();
 
-      reader.onload =
-        () =>
-          resolve(
-            reader.result.split(",")[1]
+
+    reader.onload = function(event) {
+
+      const img =
+        new Image();
+
+
+      img.onload = function() {
+
+        const MAX_WIDTH = 1600;
+
+        const MAX_HEIGHT = 1600;
+
+
+        let width =
+          img.width;
+
+        let height =
+          img.height;
+
+
+        if (
+          width > MAX_WIDTH ||
+          height > MAX_HEIGHT
+        ) {
+
+          const proporcao =
+            Math.min(
+              MAX_WIDTH / width,
+              MAX_HEIGHT / height
+            );
+
+          width =
+            Math.round(
+              width * proporcao
+            );
+
+          height =
+            Math.round(
+              height * proporcao
+            );
+
+        }
+
+
+        const canvas =
+          document.createElement("canvas");
+
+
+        canvas.width =
+          width;
+
+        canvas.height =
+          height;
+
+
+        const ctx =
+          canvas.getContext("2d");
+
+
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          width,
+          height
+        );
+
+
+        const qualidade = 0.78;
+
+
+        const dataURL =
+          canvas.toDataURL(
+            "image/jpeg",
+            qualidade
           );
 
-      reader.onerror = reject;
 
-      reader.readAsDataURL(file);
+        const base64 =
+          dataURL.split(",")[1];
 
-    }
-  );
+
+        resolve({
+
+          base64:
+            base64,
+
+          mimeType:
+            "image/jpeg",
+
+          tamanho:
+            Math.round(
+              (base64.length * 3) / 4
+            )
+
+        });
+
+      };
+
+
+      img.onerror =
+        reject;
+
+
+      img.src =
+        event.target.result;
+
+    };
+
+
+    reader.onerror =
+      reject;
+
+
+    reader.readAsDataURL(file);
+
+  });
 
 }
 
 
-/* =========================
+/* ==================================================
    FOTOS
-========================= */
+================================================== */
 
 document
   .querySelectorAll("[data-categoria]")
@@ -205,71 +326,84 @@ document
         const file =
           this.files[0];
 
+
         if (!file)
           return;
 
 
-        if (
-          file.size >
-          8 * 1024 * 1024
-        ) {
+        try {
 
-          alert(
-            "A foto deve ter no máximo 8 MB."
-          );
+          $("loading")
+            .classList
+            .remove("hidden");
+
+
+          const fotoProcessada =
+            await prepararFoto(file);
+
+
+          const foto = {
+
+            categoria:
+              this.dataset.categoria,
+
+            nome:
+              file.name,
+
+            mimeType:
+              fotoProcessada.mimeType,
+
+            base64:
+              fotoProcessada.base64
+
+          };
+
+
+          fotos.push(foto);
+
+
+          const div =
+            document.createElement("div");
+
+
+          div.innerHTML = `
+
+            <img
+              src="${URL.createObjectURL(file)}">
+
+            <small>
+              ${foto.categoria}
+            </small>
+
+          `;
+
+
+          $("photoPreview")
+            .appendChild(div);
+
 
           this.value = "";
 
-          return;
+
+        } catch (erro) {
+
+          console.error(
+            "Erro ao processar foto:",
+            erro
+          );
+
+
+          alert(
+            "Não foi possível processar a foto."
+          );
+
+        } finally {
+
+          $("loading")
+            .classList
+            .add("hidden");
 
         }
-
-
-        const base64 =
-          await arquivoBase64(file);
-
-
-        const foto = {
-
-          categoria:
-            this.dataset.categoria,
-
-          nome:
-            file.name,
-
-          mimeType:
-            file.type,
-
-          base64:
-            base64
-
-        };
-
-
-        fotos.push(foto);
-
-
-        const div =
-          document.createElement("div");
-
-
-        div.innerHTML = `
-
-          <img
-            src="${URL.createObjectURL(file)}">
-
-          <small>
-            ${foto.categoria}
-          </small>
-
-        `;
-
-
-        $("photoPreview")
-          .appendChild(div);
-
-
-        this.value = "";
 
       }
     );
@@ -277,14 +411,14 @@ document
   });
 
 
-/* =========================
+/* ==================================================
    COLETAR DADOS
-========================= */
+================================================== */
 
 function coletarDados() {
 
-
   const itens =
+
     ITENS.map(
       (descricao, index) => {
 
@@ -309,7 +443,9 @@ function coletarDados() {
             descricao,
 
           status:
-            status.value,
+            status
+              ? status.value
+              : "",
 
           observacao:
             observacao
@@ -363,9 +499,9 @@ function coletarDados() {
 }
 
 
-/* =========================
-   ENVIAR
-========================= */
+/* ==================================================
+   ENVIAR CHECKLIST
+================================================== */
 
 $("checklistForm")
   .addEventListener(
@@ -379,10 +515,9 @@ $("checklistForm")
         coletarDados();
 
 
-      /*
-       * Se houver avaria,
-       * exige pelo menos uma foto.
-       */
+      /* ---------------------------------------------
+         VERIFICA AVARIA
+      --------------------------------------------- */
 
       const existeAvaria =
         dados.itens.some(
@@ -397,13 +532,39 @@ $("checklistForm")
       ) {
 
         alert(
-          "Existe uma avaria registrada. Inclua pelo menos uma foto."
+          "Existe uma avaria registrada.\n\nInclua pelo menos uma foto antes de finalizar."
         );
 
         return;
 
       }
 
+
+      /* ---------------------------------------------
+         GARANTE QUE TODOS OS ITENS FORAM RESPONDIDOS
+      --------------------------------------------- */
+
+      const itemSemResposta =
+        dados.itens.some(
+          item =>
+            !item.status
+        );
+
+
+      if (itemSemResposta) {
+
+        alert(
+          "Responda todos os itens do checklist antes de finalizar."
+        );
+
+        return;
+
+      }
+
+
+      /* ---------------------------------------------
+         LOADING
+      --------------------------------------------- */
 
       $("loading")
         .classList
@@ -413,16 +574,23 @@ $("checklistForm")
       try {
 
 
+        /* -------------------------------------------
+           ENVIO
+        ------------------------------------------- */
+
         const resposta =
           await fetch(
             API_URL,
             {
 
-              method: "POST",
+              method:
+                "POST",
 
               headers: {
+
                 "Content-Type":
                   "text/plain;charset=utf-8"
+
               },
 
               body:
@@ -432,9 +600,45 @@ $("checklistForm")
           );
 
 
-        const resultado =
-          await resposta.json();
+        if (!resposta.ok) {
 
+          throw new Error(
+            "O servidor retornou o erro HTTP " +
+            resposta.status
+          );
+
+        }
+
+
+        const texto =
+          await resposta.text();
+
+
+        let resultado;
+
+
+        try {
+
+          resultado =
+            JSON.parse(texto);
+
+        } catch (erroJSON) {
+
+          console.error(
+            "Resposta recebida:",
+            texto
+          );
+
+          throw new Error(
+            "O servidor não retornou uma resposta válida."
+          );
+
+        }
+
+
+        /* -------------------------------------------
+           ERRO DO APPS SCRIPT
+        ------------------------------------------- */
 
         if (!resultado.ok) {
 
@@ -446,21 +650,50 @@ $("checklistForm")
         }
 
 
+        /* -------------------------------------------
+           SUCESSO
+        ------------------------------------------- */
+
         $("protocolo")
           .textContent =
           resultado.protocolo;
 
 
-        mostrarTela("success");
+        mostrarTela(
+          "success"
+        );
 
 
       } catch (erro) {
 
-        console.error(erro);
+        console.error(
+          "Erro no envio:",
+          erro
+        );
+
+
+        let mensagem =
+          erro.message ||
+          "Erro desconhecido";
+
+
+        if (
+          mensagem === "Load failed" ||
+          mensagem === "Failed to fetch"
+        ) {
+
+          mensagem =
+            "Não foi possível comunicar com o servidor.\n\n" +
+            "Verifique sua conexão com a internet e tente novamente.";
+
+        }
+
 
         alert(
+
           "Não foi possível salvar o checklist.\n\n" +
-          erro.message
+          mensagem
+
         );
 
 
@@ -476,9 +709,9 @@ $("checklistForm")
   );
 
 
-/* =========================
+/* ==================================================
    TIPO DE CHECKLIST
-========================= */
+================================================== */
 
 document
   .querySelectorAll("[data-tipo]")
@@ -510,30 +743,46 @@ document
   });
 
 
-/* =========================
-   BOTÕES
-========================= */
+/* ==================================================
+   BOTÃO VOLTAR
+================================================== */
 
 $("btnVoltar").onclick =
-  () => mostrarTela("home");
+  () =>
+    mostrarTela(
+      "home"
+    );
 
+
+/* ==================================================
+   NOVO CHECKLIST
+================================================== */
 
 $("btnNovo").onclick =
   () => {
 
     limparFormulario();
 
-    mostrarTela("home");
+    mostrarTela(
+      "home"
+    );
 
   };
 
 
+/* ==================================================
+   INÍCIO
+================================================== */
+
 $("btnInicio").onclick =
-  () => mostrarTela("home");
+  () =>
+    mostrarTela(
+      "home"
+    );
 
 
-/* =========================
+/* ==================================================
    INICIALIZAÇÃO
-========================= */
+================================================== */
 
 criarChecklist();
