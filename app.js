@@ -2,22 +2,25 @@ const API_URL =
 "https://script.google.com/macros/s/AKfycbz9IerVRS7Z-LWy0FfwQyhYQ563-AP42Yc7NPxQ4coR3blgSIgQO3fR9dWybBTAhet3/exec";
 
 
+/****************************************************
+ * LISTA OFICIAL DE INSPEÇÃO
+ ****************************************************/
+
 const ITENS = [
 
-  "Estado geral",
-  "Lataria / carenagens",
-  "Pneus / rodas",
-  "Vidros",
+  "Lataria/Carenagens",
+  "Pneus/Rodas/Esteiras",
+  "Vidros/Parabrisa/Janelas",
   "Espelhos",
   "Cabine",
-  "Banco",
-  "Painel",
   "Comandos",
-  "Vazamentos aparentes",
-  "Adesivos / identificação",
-  "Implementos / acessórios",
+  "Adesivos e Identificação",
+  "Buzina",
+  "Luzes/Setas/Farol",
+  "Sirene de Ré",
+  "Implementos/Acessórios",
   "Itens deixados pelo cliente",
-  "Teste funcional"
+  "Teste Funcional"
 
 ];
 
@@ -66,7 +69,7 @@ function criarChecklist() {
       <div class="item">
 
         <div class="item-title">
-          ${item}
+          ${String(index + 1).padStart(2, "0")}. ${item}
         </div>
 
         <div class="options">
@@ -163,124 +166,117 @@ function limparFormulario() {
 
 
 /* =========================
-   FOTO → JPEG <= 380 KB
-   ========================= */
-const MAX_IMAGE_BYTES = 380 * 1024;
-const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
-const MAX_IMAGE_DIMENSION = 1600;
+   FOTO → BASE64
+========================= */
 
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result).split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
+function arquivoBase64(file) {
 
-function carregarImagem(file) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(img);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Não foi possível ler a imagem."));
-    };
-    img.src = url;
-  });
-}
+  return new Promise(
+    (resolve, reject) => {
 
-async function comprimirImagem(file) {
-  if (file.size > MAX_SOURCE_BYTES) {
-    throw new Error("A foto original excede 20 MB.");
-  }
+      const reader =
+        new FileReader();
 
-  const img = await carregarImagem(file);
-  let largura = img.naturalWidth || img.width;
-  let altura = img.naturalHeight || img.height;
+      reader.onload =
+        () =>
+          resolve(
+            reader.result.split(",")[1]
+          );
 
-  const escalaInicial = Math.min(
-    1,
-    MAX_IMAGE_DIMENSION / Math.max(largura, altura)
+      reader.onerror = reject;
+
+      reader.readAsDataURL(file);
+
+    }
   );
 
-  largura = Math.max(1, Math.round(largura * escalaInicial));
-  altura = Math.max(1, Math.round(altura * escalaInicial));
-
-  for (let tentativaDimensao = 0; tentativaDimensao < 6; tentativaDimensao++) {
-    const canvas = document.createElement("canvas");
-    canvas.width = largura;
-    canvas.height = altura;
-
-    const ctx = canvas.getContext("2d", { alpha: false });
-    ctx.drawImage(img, 0, 0, largura, altura);
-
-    for (let qualidade = 0.82; qualidade >= 0.42; qualidade -= 0.06) {
-      const blob = await new Promise(resolve =>
-        canvas.toBlob(resolve, "image/jpeg", qualidade)
-      );
-
-      if (blob && blob.size <= MAX_IMAGE_BYTES) {
-        return {
-          blob,
-          base64: await blobToBase64(blob),
-          mimeType: "image/jpeg"
-        };
-      }
-    }
-
-    largura = Math.round(largura * 0.85);
-    altura = Math.round(altura * 0.85);
-  }
-
-  throw new Error("Não foi possível comprimir a foto para menos de 380 KB.");
 }
+
 
 /* =========================
    FOTOS
-   ========================= */
+========================= */
+
 document
   .querySelectorAll("[data-categoria]")
   .forEach(input => {
-    input.addEventListener("change", async function() {
-      const file = this.files[0];
-      if (!file) return;
 
-      try {
-        const resultado = await comprimirImagem(file);
+    input.addEventListener(
+      "change",
+      async function() {
+
+        const file =
+          this.files[0];
+
+        if (!file)
+          return;
+
+
+        if (
+          file.size >
+          8 * 1024 * 1024
+        ) {
+
+          alert(
+            "A foto deve ter no máximo 8 MB."
+          );
+
+          this.value = "";
+
+          return;
+
+        }
+
+
+        const base64 =
+          await arquivoBase64(file);
+
 
         const foto = {
-          categoria: this.dataset.categoria,
-          nome: file.name,
-          mimeType: resultado.mimeType,
-          base64: resultado.base64
+
+          categoria:
+            this.dataset.categoria,
+
+          nome:
+            file.name,
+
+          mimeType:
+            file.type,
+
+          base64:
+            base64
+
         };
+
 
         fotos.push(foto);
 
-        const div = document.createElement("div");
-        const imgPreview = document.createElement("img");
-        imgPreview.src = URL.createObjectURL(resultado.blob);
-        imgPreview.onload = () => URL.revokeObjectURL(imgPreview.src);
 
-        const small = document.createElement("small");
-        small.textContent =
-          `${foto.categoria} — ${Math.round(resultado.blob.size / 1024)} KB`;
+        const div =
+          document.createElement("div");
 
-        div.appendChild(imgPreview);
-        div.appendChild(small);
-        $("photoPreview").appendChild(div);
-      } catch (erroFoto) {
-        console.error(erroFoto);
-        alert(erroFoto.message || "Não foi possível processar a foto.");
-      } finally {
+
+        div.innerHTML = `
+
+          <img
+            src="${URL.createObjectURL(file)}">
+
+          <small>
+            ${foto.categoria}
+          </small>
+
+        `;
+
+
+        $("photoPreview")
+          .appendChild(div);
+
+
         this.value = "";
+
       }
-    });
+    );
+
   });
 
 
@@ -316,7 +312,9 @@ function coletarDados() {
             descricao,
 
           status:
-            status.value,
+            status
+              ? status.value
+              : "",
 
           observacao:
             observacao
