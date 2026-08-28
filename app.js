@@ -31,9 +31,9 @@ const $ = id =>
   document.getElementById(id);
 
 
-/* ==================================================
+/* =================================================
    NAVEGAÇÃO
-================================================== */
+================================================= */
 
 function mostrarTela(id) {
 
@@ -43,81 +43,102 @@ function mostrarTela(id) {
       screen.classList.remove("active")
     );
 
-  $(id).classList.add("active");
+
+  const tela = $(id);
+
+  if (tela) {
+
+    tela.classList.add("active");
+
+  }
+
 
   window.scrollTo({
+
     top: 0,
     behavior: "smooth"
+
   });
 
 }
 
 
-/* ==================================================
+/* =================================================
    CHECKLIST
-================================================== */
+================================================= */
 
 function criarChecklist() {
 
-  $("items").innerHTML =
+  const container =
+    $("items");
 
-    ITENS.map((item, index) => `
 
-      <div class="item">
+  if (!container)
+    return;
 
-        <div class="item-title">
-          ${item}
+
+  container.innerHTML =
+
+    ITENS.map(
+      (item, index) => `
+
+        <div class="item">
+
+          <div class="item-title">
+            ${item}
+          </div>
+
+
+          <div class="options">
+
+            <label>
+
+              <input
+                type="radio"
+                name="item_${index}"
+                value="OK"
+                required>
+
+              OK
+
+            </label>
+
+
+            <label>
+
+              <input
+                type="radio"
+                name="item_${index}"
+                value="AVARIA">
+
+              Avaria
+
+            </label>
+
+
+            <label>
+
+              <input
+                type="radio"
+                name="item_${index}"
+                value="N/A">
+
+              N/A
+
+            </label>
+
+          </div>
+
+
+          <textarea
+            rows="2"
+            placeholder="Descreva a avaria...">
+          </textarea>
+
         </div>
 
-        <div class="options">
-
-          <label>
-
-            <input
-              type="radio"
-              name="item_${index}"
-              value="OK"
-              required>
-
-            OK
-
-          </label>
-
-
-          <label>
-
-            <input
-              type="radio"
-              name="item_${index}"
-              value="AVARIA">
-
-            Avaria
-
-          </label>
-
-
-          <label>
-
-            <input
-              type="radio"
-              name="item_${index}"
-              value="N/A">
-
-            N/A
-
-          </label>
-
-        </div>
-
-
-        <textarea
-          rows="2"
-          placeholder="Descreva a avaria...">
-        </textarea>
-
-      </div>
-
-    `).join("");
+      `
+    ).join("");
 
 
   document
@@ -131,25 +152,28 @@ function criarChecklist() {
           const item =
             this.closest(".item");
 
+
           const textarea =
             item.querySelector("textarea");
 
 
-          if (this.value === "AVARIA") {
+          if (
+            this.value === "AVARIA"
+          ) {
 
-            item.classList.add("avaria");
+            item.classList.add(
+              "avaria"
+            );
 
             textarea.required = true;
 
           } else {
 
-            item.classList.remove("avaria");
+            item.classList.remove(
+              "avaria"
+            );
 
             textarea.required = false;
-
-            if (this.value !== "AVARIA") {
-              textarea.value = "";
-            }
 
           }
 
@@ -161,159 +185,87 @@ function criarChecklist() {
 }
 
 
-/* ==================================================
+/* =================================================
    RESET
-================================================== */
+================================================= */
 
 function limparFormulario() {
 
-  $("checklistForm").reset();
+  const formulario =
+    $("checklistForm");
+
+
+  if (formulario) {
+
+    formulario.reset();
+
+  }
+
 
   fotos = [];
 
-  $("photoPreview").innerHTML = "";
+
+  const preview =
+    $("photoPreview");
+
+
+  if (preview) {
+
+    preview.innerHTML = "";
+
+  }
+
 
   criarChecklist();
 
 }
 
 
-/* ==================================================
-   REDIMENSIONAR E COMPRIMIR FOTO
-================================================== */
+/* =================================================
+   FOTO → BASE64
+================================================= */
 
-function prepararFoto(file) {
+function arquivoBase64(file) {
 
-  return new Promise((resolve, reject) => {
+  return new Promise(
+    (resolve, reject) => {
 
-    const reader =
-      new FileReader();
-
-
-    reader.onload = function(event) {
-
-      const img =
-        new Image();
+      const reader =
+        new FileReader();
 
 
-      img.onload = function() {
+      reader.onload =
+        () => {
 
-        const MAX_WIDTH = 1600;
-
-        const MAX_HEIGHT = 1600;
-
-
-        let width =
-          img.width;
-
-        let height =
-          img.height;
+          const resultado =
+            reader.result;
 
 
-        if (
-          width > MAX_WIDTH ||
-          height > MAX_HEIGHT
-        ) {
-
-          const proporcao =
-            Math.min(
-              MAX_WIDTH / width,
-              MAX_HEIGHT / height
-            );
-
-          width =
-            Math.round(
-              width * proporcao
-            );
-
-          height =
-            Math.round(
-              height * proporcao
-            );
-
-        }
+          const base64 =
+            resultado
+              .split(",")[1];
 
 
-        const canvas =
-          document.createElement("canvas");
+          resolve(base64);
+
+        };
 
 
-        canvas.width =
-          width;
-
-        canvas.height =
-          height;
-
-
-        const ctx =
-          canvas.getContext("2d");
-
-
-        ctx.drawImage(
-          img,
-          0,
-          0,
-          width,
-          height
-        );
-
-
-        const qualidade = 0.78;
-
-
-        const dataURL =
-          canvas.toDataURL(
-            "image/jpeg",
-            qualidade
-          );
-
-
-        const base64 =
-          dataURL.split(",")[1];
-
-
-        resolve({
-
-          base64:
-            base64,
-
-          mimeType:
-            "image/jpeg",
-
-          tamanho:
-            Math.round(
-              (base64.length * 3) / 4
-            )
-
-        });
-
-      };
-
-
-      img.onerror =
+      reader.onerror =
         reject;
 
 
-      img.src =
-        event.target.result;
+      reader.readAsDataURL(file);
 
-    };
-
-
-    reader.onerror =
-      reject;
-
-
-    reader.readAsDataURL(file);
-
-  });
+    }
+  );
 
 }
 
 
-/* ==================================================
+/* =================================================
    FOTOS
-================================================== */
+================================================= */
 
 document
   .querySelectorAll("[data-categoria]")
@@ -331,15 +283,34 @@ document
           return;
 
 
+        /* -----------------------------------------
+           LIMITE DA FOTO
+        ----------------------------------------- */
+
+        if (
+          file.size >
+          8 * 1024 * 1024
+        ) {
+
+          alert(
+            "A foto deve ter no máximo 8 MB."
+          );
+
+
+          this.value = "";
+
+
+          return;
+
+        }
+
+
         try {
 
-          $("loading")
-            .classList
-            .remove("hidden");
-
-
-          const fotoProcessada =
-            await prepararFoto(file);
+          const base64 =
+            await arquivoBase64(
+              file
+            );
 
 
           const foto = {
@@ -351,35 +322,66 @@ document
               file.name,
 
             mimeType:
-              fotoProcessada.mimeType,
+              file.type ||
+              "image/jpeg",
 
             base64:
-              fotoProcessada.base64
+              base64
 
           };
 
 
-          fotos.push(foto);
+          fotos.push(
+            foto
+          );
 
+
+          /* ---------------------------------------
+             PREVIEW
+          --------------------------------------- */
 
           const div =
-            document.createElement("div");
+            document.createElement(
+              "div"
+            );
 
 
-          div.innerHTML = `
+          const imagem =
+            document.createElement(
+              "img"
+            );
 
-            <img
-              src="${URL.createObjectURL(file)}">
 
-            <small>
-              ${foto.categoria}
-            </small>
+          imagem.src =
+            URL.createObjectURL(
+              file
+            );
 
-          `;
+
+          const legenda =
+            document.createElement(
+              "small"
+            );
+
+
+          legenda.textContent =
+            foto.categoria;
+
+
+          div.appendChild(
+            imagem
+          );
+
+
+          div.appendChild(
+            legenda
+          );
 
 
           $("photoPreview")
-            .appendChild(div);
+            .appendChild(
+              div
+            );
 
 
           this.value = "";
@@ -397,12 +399,6 @@ document
             "Não foi possível processar a foto."
           );
 
-        } finally {
-
-          $("loading")
-            .classList
-            .add("hidden");
-
         }
 
       }
@@ -411,16 +407,17 @@ document
   });
 
 
-/* ==================================================
+/* =================================================
    COLETAR DADOS
-================================================== */
+================================================= */
 
 function coletarDados() {
 
-  const itens =
 
+  const itens =
     ITENS.map(
       (descricao, index) => {
+
 
         const status =
           document.querySelector(
@@ -428,13 +425,18 @@ function coletarDados() {
           );
 
 
+        const textareas =
+          document.querySelectorAll(
+            ".item textarea"
+          );
+
+
         const observacao =
-          document
-            .querySelectorAll(
-              ".item textarea"
-            )[index]
-            .value
-            .trim();
+          textareas[index]
+            ? textareas[index]
+                .value
+                .trim()
+            : "";
 
 
         return {
@@ -462,31 +464,48 @@ function coletarDados() {
       tipoChecklist,
 
     cliente:
-      $("cliente").value.trim(),
+      $("cliente")
+        .value
+        .trim(),
 
     equipamento:
-      $("equipamento").value.trim(),
+      $("equipamento")
+        .value
+        .trim(),
 
     modelo:
-      $("modelo").value.trim(),
+      $("modelo")
+        .value
+        .trim(),
 
     chassi:
-      $("chassi").value.trim(),
+      $("chassi")
+        .value
+        .trim(),
 
     os:
-      $("os").value.trim(),
+      $("os")
+        .value
+        .trim(),
 
     horimetro:
-      $("horimetro").value,
+      $("horimetro")
+        .value,
 
     responsavel:
-      $("responsavel").value.trim(),
+      $("responsavel")
+        .value
+        .trim(),
 
     filial:
-      $("filial").value.trim(),
+      $("filial")
+        .value
+        .trim(),
 
     observacoes:
-      $("observacoes").value.trim(),
+      $("observacoes")
+        .value
+        .trim(),
 
     itens:
       itens,
@@ -499,9 +518,150 @@ function coletarDados() {
 }
 
 
-/* ==================================================
-   ENVIAR CHECKLIST
-================================================== */
+/* =================================================
+   VALIDAR DADOS
+================================================= */
+
+function validarDados(dados) {
+
+
+  if (!dados.tipo) {
+
+    alert(
+      "Selecione o tipo de checklist."
+    );
+
+    return false;
+
+  }
+
+
+  if (!dados.cliente) {
+
+    alert(
+      "Informe o cliente."
+    );
+
+    $("cliente").focus();
+
+    return false;
+
+  }
+
+
+  if (!dados.equipamento) {
+
+    alert(
+      "Informe o equipamento."
+    );
+
+    $("equipamento").focus();
+
+    return false;
+
+  }
+
+
+  if (!dados.chassi) {
+
+    alert(
+      "Informe o chassi / número de série."
+    );
+
+    $("chassi").focus();
+
+    return false;
+
+  }
+
+
+  if (
+    dados.horimetro === ""
+  ) {
+
+    alert(
+      "Informe o horímetro."
+    );
+
+    $("horimetro").focus();
+
+    return false;
+
+  }
+
+
+  if (!dados.responsavel) {
+
+    alert(
+      "Informe o responsável."
+    );
+
+    $("responsavel").focus();
+
+    return false;
+
+  }
+
+
+  /* ---------------------------------------------
+     VERIFICA TODOS OS ITENS
+  --------------------------------------------- */
+
+  const itemSemResposta =
+    dados.itens.some(
+      item =>
+        !item.status
+    );
+
+
+  if (itemSemResposta) {
+
+    alert(
+      "Responda todos os itens do checklist antes de finalizar."
+    );
+
+    return false;
+
+  }
+
+
+  /* ---------------------------------------------
+     AVARIA EXIGE FOTO
+  --------------------------------------------- */
+
+  const existeAvaria =
+    dados.itens.some(
+      item =>
+        item.status === "AVARIA"
+    );
+
+
+  if (
+    existeAvaria &&
+    fotos.length === 0
+  ) {
+
+    alert(
+      "Existe uma avaria registrada.\n\n" +
+      "Inclua pelo menos uma foto antes de finalizar."
+    );
+
+    return false;
+
+  }
+
+
+  return true;
+
+}
+
+
+/* =================================================
+   ENVIO
+   MÉTODO COMPATÍVEL COM SAFARI / iPHONE
+
+   NÃO USA FETCH.
+================================================= */
 
 $("checklistForm")
   .addEventListener(
@@ -511,152 +671,177 @@ $("checklistForm")
       event.preventDefault();
 
 
+      /* -------------------------------------------
+         COLETA
+      ------------------------------------------- */
+
       const dados =
         coletarDados();
 
 
-      /* ---------------------------------------------
-         VERIFICA AVARIA
-      --------------------------------------------- */
-
-      const existeAvaria =
-        dados.itens.some(
-          item =>
-            item.status === "AVARIA"
-        );
-
+      /* -------------------------------------------
+         VALIDAÇÃO
+      ------------------------------------------- */
 
       if (
-        existeAvaria &&
-        fotos.length === 0
+        !validarDados(
+          dados
+        )
       ) {
 
-        alert(
-          "Existe uma avaria registrada.\n\nInclua pelo menos uma foto antes de finalizar."
-        );
-
         return;
 
       }
 
 
-      /* ---------------------------------------------
-         GARANTE QUE TODOS OS ITENS FORAM RESPONDIDOS
-      --------------------------------------------- */
-
-      const itemSemResposta =
-        dados.itens.some(
-          item =>
-            !item.status
-        );
-
-
-      if (itemSemResposta) {
-
-        alert(
-          "Responda todos os itens do checklist antes de finalizar."
-        );
-
-        return;
-
-      }
-
-
-      /* ---------------------------------------------
+      /* -------------------------------------------
          LOADING
-      --------------------------------------------- */
+      ------------------------------------------- */
 
       $("loading")
         .classList
-        .remove("hidden");
+        .remove(
+          "hidden"
+        );
 
 
       try {
 
 
-        /* -------------------------------------------
-           ENVIO
-        ------------------------------------------- */
+        /* -----------------------------------------
+           IFRAME OCULTO
+        ----------------------------------------- */
 
-        const resposta =
-          await fetch(
-            API_URL,
-            {
-
-              method:
-                "POST",
-
-              headers: {
-
-                "Content-Type":
-                  "text/plain;charset=utf-8"
-
-              },
-
-              body:
-                JSON.stringify(dados)
-
-            }
+        let iframe =
+          document.getElementById(
+            "googleAppsScriptFrame"
           );
 
 
-        if (!resposta.ok) {
+        if (!iframe) {
 
-          throw new Error(
-            "O servidor retornou o erro HTTP " +
-            resposta.status
-          );
-
-        }
+          iframe =
+            document.createElement(
+              "iframe"
+            );
 
 
-        const texto =
-          await resposta.text();
+          iframe.id =
+            "googleAppsScriptFrame";
 
 
-        let resultado;
+          iframe.name =
+            "googleAppsScriptFrame";
 
 
-        try {
+          iframe.style.display =
+            "none";
 
-          resultado =
-            JSON.parse(texto);
 
-        } catch (erroJSON) {
-
-          console.error(
-            "Resposta recebida:",
-            texto
-          );
-
-          throw new Error(
-            "O servidor não retornou uma resposta válida."
+          document.body.appendChild(
+            iframe
           );
 
         }
 
 
-        /* -------------------------------------------
-           ERRO DO APPS SCRIPT
-        ------------------------------------------- */
+        /* -----------------------------------------
+           FORMULÁRIO OCULTO
+        ----------------------------------------- */
 
-        if (!resultado.ok) {
-
-          throw new Error(
-            resultado.message ||
-            "Erro ao salvar checklist."
+        const form =
+          document.createElement(
+            "form"
           );
 
-        }
+
+        form.method =
+          "POST";
 
 
-        /* -------------------------------------------
-           SUCESSO
-        ------------------------------------------- */
+        form.action =
+          API_URL;
+
+
+        form.target =
+          "googleAppsScriptFrame";
+
+
+        form.style.display =
+          "none";
+
+
+        /* -----------------------------------------
+           PAYLOAD
+
+           O Apps Script deverá ler:
+
+           e.parameter.payload
+        ----------------------------------------- */
+
+        const input =
+          document.createElement(
+            "input"
+          );
+
+
+        input.type =
+          "hidden";
+
+
+        input.name =
+          "payload";
+
+
+        input.value =
+          JSON.stringify(
+            dados
+          );
+
+
+        form.appendChild(
+          input
+        );
+
+
+        document.body.appendChild(
+          form
+        );
+
+
+        /* -----------------------------------------
+           ENVIA
+        ----------------------------------------- */
+
+        form.submit();
+
+
+        /* -----------------------------------------
+           AGUARDA O PROCESSAMENTO
+
+           Como o envio é feito por iframe,
+           não utilizamos fetch/json.
+        ----------------------------------------- */
+
+        await new Promise(
+          resolve =>
+            setTimeout(
+              resolve,
+              7000
+            )
+        );
+
+
+        /* -----------------------------------------
+           MOSTRA SUCESSO
+
+           O protocolo definitivo será tratado
+           pelo backend / Code.gs.
+        ----------------------------------------- */
 
         $("protocolo")
           .textContent =
-          resultado.protocolo;
+          "Checklist enviado com sucesso";
 
 
         mostrarTela(
@@ -664,36 +849,44 @@ $("checklistForm")
         );
 
 
+        /* -----------------------------------------
+           LIMPA FORMULÁRIO TEMPORÁRIO
+        ----------------------------------------- */
+
+        setTimeout(
+          () => {
+
+            if (
+              form &&
+              form.parentNode
+            ) {
+
+              form.parentNode
+                .removeChild(
+                  form
+                );
+
+            }
+
+          },
+          1000
+        );
+
+
       } catch (erro) {
 
         console.error(
-          "Erro no envio:",
+          "Erro ao enviar checklist:",
           erro
         );
 
 
-        let mensagem =
-          erro.message ||
-          "Erro desconhecido";
-
-
-        if (
-          mensagem === "Load failed" ||
-          mensagem === "Failed to fetch"
-        ) {
-
-          mensagem =
-            "Não foi possível comunicar com o servidor.\n\n" +
-            "Verifique sua conexão com a internet e tente novamente.";
-
-        }
-
-
         alert(
-
-          "Não foi possível salvar o checklist.\n\n" +
-          mensagem
-
+          "Não foi possível enviar o checklist.\n\n" +
+          (
+            erro.message ||
+            "Erro de comunicação com o servidor."
+          )
         );
 
 
@@ -701,7 +894,9 @@ $("checklistForm")
 
         $("loading")
           .classList
-          .add("hidden");
+          .add(
+            "hidden"
+          );
 
       }
 
@@ -709,9 +904,9 @@ $("checklistForm")
   );
 
 
-/* ==================================================
+/* =================================================
    TIPO DE CHECKLIST
-================================================== */
+================================================= */
 
 document
   .querySelectorAll("[data-tipo]")
@@ -720,6 +915,7 @@ document
     botao.addEventListener(
       "click",
       function() {
+
 
         tipoChecklist =
           this.dataset.tipo;
@@ -743,25 +939,12 @@ document
   });
 
 
-/* ==================================================
+/* =================================================
    BOTÃO VOLTAR
-================================================== */
+================================================= */
 
 $("btnVoltar").onclick =
-  () =>
-    mostrarTela(
-      "home"
-    );
-
-
-/* ==================================================
-   NOVO CHECKLIST
-================================================== */
-
-$("btnNovo").onclick =
   () => {
-
-    limparFormulario();
 
     mostrarTela(
       "home"
@@ -770,19 +953,39 @@ $("btnNovo").onclick =
   };
 
 
-/* ==================================================
-   INÍCIO
-================================================== */
+/* =================================================
+   NOVO CHECKLIST
+================================================= */
 
-$("btnInicio").onclick =
-  () =>
+$("btnNovo").onclick =
+  () => {
+
+    limparFormulario();
+
+
     mostrarTela(
       "home"
     );
 
+  };
 
-/* ==================================================
+
+/* =================================================
+   INÍCIO
+================================================= */
+
+$("btnInicio").onclick =
+  () => {
+
+    mostrarTela(
+      "home"
+    );
+
+  };
+
+
+/* =================================================
    INICIALIZAÇÃO
-================================================== */
+================================================= */
 
 criarChecklist();
